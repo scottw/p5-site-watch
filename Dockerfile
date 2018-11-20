@@ -12,8 +12,7 @@ RUN apk update && apk upgrade && apk add --no-cache \
         && cpanm --notest Type::Tiny@1.004002 \
         && cpanm --installdeps --notest . \
         && rm -rf /var/cache/apk/* \
-        /root/.cpanm \
-        /app/Type-Tiny-1.004002.tar.gz
+        /root/.cpanm
 
 COPY docker-entrypoint site-watch /app/
 COPY lib /app/lib/
