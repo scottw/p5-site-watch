@@ -69,10 +69,10 @@ sub usage {
     die <<_USAGE_
 Error: $err
 
-Usage: site-check [--name="My site"]
+Usage: site-watch [--name="My site"]
                   [--url="https://example.com"]
                   [--request_timeout=3.250]
-                  [--config=/path/to/site-check.yaml]
+                  [--config=/path/to/site-watch.yaml]
 
 - name: The name of the website; this is an identifier of your choice to
         distinguish between results in the output. This option is required
