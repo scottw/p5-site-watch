@@ -1,0 +1,13 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+$ENV{CONFIG} = "/app/etc/site-watch.yaml"
+  if -f "/app/etc/site-watch.yaml";
+
+exec "./site-watch",
+  map { "--" . $_->{copt}, $ENV{$_->{env}} }
+  map { +{copt => lc $_, env => $_} }
+  grep { $ENV{$_} }
+  map { uc }
+  qw/name url request_timeout config/;

@@ -1,0 +1,5 @@
+**
+!cpanfile*
+!docker-entrypoint
+!site-watch
+!lib/**

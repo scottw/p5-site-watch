@@ -1,0 +1,111 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use YAML::XS 'LoadFile';
+use Mojo::UserAgent;
+use Mojo::Promise;
+
+use lib 'lib';
+use Site;
+
+use Getopt::Long;
+GetOptions(my $opt = {}, 'verbose', 'config=s', 'name=s', 'url=s', 'request_timeout=f') or usage("Invalid option");
+
+my $conf = {};
+if ($opt->{config}) {
+    $conf = LoadFile $opt->{config} or usage("Unable to load configuration file: $@");
+}
+
+usage("Missing name") if $opt->{url} && !$opt->{name};
+
+if ($opt->{name}) {
+    usage("Missing url") unless $opt->{url};
+
+    my $site = {};
+    $site->{name} = $opt->{name};
+    $site->{url}  = $opt->{url};
+    $site->{request_timeout} = $opt->{request_timeout} if exists $opt->{request_timeout};
+
+    unshift @{$conf->{sites}}, $site;
+}
+
+usage("Must supply a config file or a name/url pair")
+  unless scalar @{$conf->{sites} // []};
+
+my @sites = map {
+    Site->new(
+        name            => $_->{name},
+        url             => $_->{url},
+        request_timeout => $_->{request_timeout} // 10,
+        ua              => Mojo::UserAgent->new
+      )
+} @{$conf->{sites}};
+
+my $start = time;
+Mojo::Promise->all(map { $_->check } @sites)->then(
+    sub {
+        csv_report($start, @sites);
+    }
+)->catch(
+    sub {
+        warn @_;
+    }
+)->wait;
+
+sub csv_report {
+    my ($time, @sites) = @_;
+
+    print sprintf qq!"%s","%s","%s","%s","%s"\n!, 'name', 'time', 'is ok', 'latency', 'error';
+    for my $site (@sites) {
+        print sprintf qq!"%s",%d,%d,%.6f,"%s"\n!, $site->name, $time, $site->is_ok,
+          $site->latency, $site->error // '';
+    }
+}
+
+sub usage {
+    my $err = shift;
+
+    die <<_USAGE_
+Error: $err
+
+Usage: site-check [--name="My site"]
+                  [--url="https://example.com"]
+                  [--request_timeout=3.250]
+                  [--config=/path/to/site-check.yaml]
+
+- name: The name of the website; this is an identifier of your choice to
+        distinguish between results in the output. This option is required
+        unless 'config' is specified.
+
+- url: The URL to visit; should include the scheme (http or https). This
+  option is required unless 'config' is specified.
+
+- request_timeout: Defaults to 10. A number of seconds (fractional seconds ok)
+  before we give up waiting for the site to respond.
+
+- config: Checking multiple sites can be done using a configuration file. The
+  format of configuration file:
+
+sites:
+  - name: 'Site 1'
+    url: 'http://www.site1.com'
+    request_timeout: 5.000
+  - name: 'Site 2'
+    url: 'https://site2.com'
+    request_timeout: 5.000
+
+Output:
+
+The output is a simple CSV report:
+
+    "name","time","is ok","latency","error"
+    "Google",1542727201,1,0.143219,""
+
+'name' is the name of ths site; 'time' is the time of day in epoch seconds
+when the test started; 'is ok' is 1 if ok, 0 if not; 'latency' is fractional
+seconds it took to receive a response from the site; 'error' is an explanation
+why 'is ok' is not 1.
+
+_USAGE_
+}
