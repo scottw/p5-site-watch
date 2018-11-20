@@ -98,6 +98,7 @@ Here is the current wishlist:
 
 - [ ] multiple output formats (json, yaml, csv, text, etc.)
 - [ ] set concurrency limits
+- [ ] set process exit status code when a site failure occurs
 
 <a name="contact"></a>
 ## Contact
