@@ -59,6 +59,7 @@ $site = Site->new(name => 'happy 1', url => '/basic?delay=0', ua => Mojo::UserAg
 $site->check->wait;
 ok $site->is_up, 'site is up';
 ok $site->is_ok, 'site is ok';
+like $site->started, qr(^\d+\.\d+$), 'start time';
 
 ## 204: unexpected
 $site = Site->new(name => 'wrong code', url => '/basic?delay=0&code=204', ua => Mojo::UserAgent->new);

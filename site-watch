@@ -42,10 +42,9 @@ my @sites = map {
       )
 } @{$conf->{sites}};
 
-my $start = time;
 Mojo::Promise->all(map { $_->check } @sites)->then(
     sub {
-        csv_report($start, @sites);
+        csv_report(@sites);
     }
 )->catch(
     sub {
@@ -54,11 +53,11 @@ Mojo::Promise->all(map { $_->check } @sites)->then(
 )->wait;
 
 sub csv_report {
-    my ($time, @sites) = @_;
+    my (@sites) = @_;
 
     print sprintf qq!"%s","%s","%s","%s","%s"\n!, 'name', 'time', 'is ok', 'latency', 'error';
     for my $site (@sites) {
-        print sprintf qq!"%s",%d,%d,%.6f,"%s"\n!, $site->name, $time, $site->is_ok,
+        print sprintf qq!"%s",%d,%d,%.6f,"%s"\n!, $site->name, $site->started, $site->is_ok,
           $site->latency, $site->error // '';
     }
 }

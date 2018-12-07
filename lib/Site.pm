@@ -16,6 +16,7 @@ has ua                 => (is => 'ro',  isa => Object);
 has method             => (is => 'ro',  isa => Enum[qw(head get)], default => 'head');
 
 has response           => (is => 'rwp', isa => Object);
+has started            => (is => 'rwp', isa => Num);
 has latency            => (is => 'rwp', isa => Num);
 has error              => (is => 'rwp', isa => Str);
 has is_up              => (is => 'rwp', isa => Bool);
@@ -31,6 +32,7 @@ sub check {
     $self->ua->request_timeout($self->request_timeout)       if $self->request_timeout;
 
     my $started = [gettimeofday()];
+    $self->_set_started(join '.' => @$started);
 
     my $method = $self->method . '_p';
     $self->ua->$method($self->url)->then(
